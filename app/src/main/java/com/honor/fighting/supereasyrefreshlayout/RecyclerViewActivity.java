@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.honor.fighting.supereasyrefreshlayout.view.SuperEasyRefreshFootView;
+import com.honor.fighting.supereasyrefreshlayout.view.SuperEasyRefreshHeadView;
 import com.honor.fighting.supereasyrefreshlayout.view.SuperEasyRefreshLayout;
 
 public class RecyclerViewActivity extends AppCompatActivity {
@@ -26,6 +28,8 @@ public class RecyclerViewActivity extends AppCompatActivity {
         initRecycler();
 
         swipe_refresh_layout = (SuperEasyRefreshLayout) findViewById(R.id.swipe_refresh_layout);//找到刷新对象
+        swipe_refresh_layout.setHeaderView(new SuperEasyRefreshHeadView(getApplicationContext()));
+        swipe_refresh_layout.setFooterView(new SuperEasyRefreshFootView(getApplicationContext()));
         initListener();
     }
 

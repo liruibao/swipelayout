@@ -47,13 +47,13 @@ public class SuperEasyRefreshLayout extends ViewGroup {
     boolean mNotify;
 
     /**顶部刷新view*/
-    SuperEasyRefreshHeadView mRefreshView;
+    HeaderView mHeaderView;
 
     /**refresh的高度值*/
-    private int mRefreshViewHeight;
+    private int mHeaderViewHeight;
 
     /**加载更多的view*/
-    private SuperEasyRefreshFootView mFooterView;
+    private FooterView mFooterView;
 
     /**footView的高度值*/
     private int mFootViewHeight;
@@ -106,7 +106,7 @@ public class SuperEasyRefreshLayout extends ViewGroup {
                         mListener.onRefresh();
                     }
                 }
-                mCurrentTargetOffsetTop = mRefreshView.getTop();
+                mCurrentTargetOffsetTop = mHeaderView.getTop();
             } else {
                 reset();
             }
@@ -119,10 +119,9 @@ public class SuperEasyRefreshLayout extends ViewGroup {
     * */
     void reset() {
         isLoadingMore = false;
-        mRefreshView.clearAnimation();
-        mRefreshView.setVisibility(View.GONE);
-        mRefreshView.setRefreshText("下拉刷新");
-        mRefreshView.hideProgressBar();
+        mHeaderView.clearAnimation();
+        mHeaderView.setVisibility(View.GONE);
+        mHeaderView.onHide();
         moveToStart();
     }
 
@@ -176,22 +175,12 @@ public class SuperEasyRefreshLayout extends ViewGroup {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
+        if (getChildCount() >1) {
+            throw new RuntimeException("SwipeLayout中只能包含一个子view");
+        }
         mTarget = getChildAt(0);//得到显示数据的View
-        mRefreshView = new SuperEasyRefreshHeadView(getContext());//刷新的headerview
-        addView(mRefreshView);
 
-        mFooterView = new SuperEasyRefreshFootView(getContext());//加载更多的底部view
-        addView(mFooterView);
-
-        mRefreshViewHeight = mRefreshView.headViewHeight;
-        mFootViewHeight = mFooterView.footViewHeight;
-
-        mRefreshOffset = (int) (mRefreshViewHeight * 1.5f);
-
-        ViewCompat.setChildrenDrawingOrderEnabled(this, true);
-
-        mOriginalOffsetTop = mCurrentTargetOffsetTop = -mRefreshViewHeight;
-        moveToStart();
+        setChildrenDrawingOrderEnabled(true);
     }
 
     @Override
@@ -205,7 +194,7 @@ public class SuperEasyRefreshLayout extends ViewGroup {
         }
         mTarget.measure(MeasureSpec.makeMeasureSpec(getMeasuredWidth() - getPaddingLeft() - getPaddingRight(), MeasureSpec.EXACTLY),
                 MeasureSpec.makeMeasureSpec( getMeasuredHeight() - getPaddingTop() - getPaddingBottom(), MeasureSpec.EXACTLY));
-        mRefreshView.measure(0,0);
+        mHeaderView.measure(0,0);
         mFooterView.measure(0,0);
     }
 
@@ -229,13 +218,13 @@ public class SuperEasyRefreshLayout extends ViewGroup {
         final int childHeight = height - getPaddingTop() - getPaddingBottom();
 
         final int refreshViewTop = mCurrentTargetOffsetTop;
-        final int targetTop = refreshViewTop + childPaddingTop+ mRefreshView.getMeasuredHeight();
+        final int targetTop = refreshViewTop + childPaddingTop+ mHeaderView.getMeasuredHeight();
         final int footerViewTop = targetTop + childHeight;
 
         mTarget.layout(childPaddingLeft, targetTop, childPaddingLeft + childWidth, targetTop + childHeight);
 
-        final int refreshViewLeft = (width - mRefreshView.getMeasuredWidth())/2;
-        mRefreshView.layout(refreshViewLeft, refreshViewTop ,refreshViewLeft + mRefreshView.getMeasuredWidth(), refreshViewTop  + mRefreshView.getMeasuredHeight());
+        final int refreshViewLeft = (width - mHeaderView.getMeasuredWidth())/2;
+        mHeaderView.layout(refreshViewLeft, refreshViewTop ,refreshViewLeft + mHeaderView.getMeasuredWidth(), refreshViewTop  + mHeaderView.getMeasuredHeight());
         final int footViewLeft = (width - mFooterView.getMeasuredWidth())/2;
         mFooterView.layout(footViewLeft,footerViewTop,footViewLeft + mFooterView.getMeasuredWidth(),footerViewTop+mFooterView.getMeasuredHeight());
     }
@@ -244,13 +233,13 @@ public class SuperEasyRefreshLayout extends ViewGroup {
      * 判断view向上是否可以滑动
      */
     public boolean canChildScrollUp() {
-        return ViewCompat.canScrollVertically(mTarget, -1);
+        return mTarget.canScrollVertically( -1);
     }
     /**
      * 判断view向下是否可以滑动
      */
     public boolean canChildScrollDown() {
-        return ViewCompat.canScrollVertically(mTarget, 1);
+        return mTarget.canScrollVertically( 1);
     }
 
     @Override
@@ -426,15 +415,15 @@ public class SuperEasyRefreshLayout extends ViewGroup {
 
         int targetY = mOriginalOffsetTop + (int) ((slingshotDist * dragPercent) + extraMove);
         // where 1.0f is a full circle
-        if (mRefreshView.getVisibility() != View.VISIBLE) {
-            mRefreshView.setVisibility(View.VISIBLE);
+        if (mHeaderView.getVisibility() != View.VISIBLE) {
+            mHeaderView.setVisibility(View.VISIBLE);
         }
 
         setTargetOffsetTopAndBottom(targetY - mCurrentTargetOffsetTop);
         if (overscrollTop > mRefreshOffset) {
-            mRefreshView.setRefreshText("松开刷新");
+            mHeaderView.onAlert( );
         } else {
-            mRefreshView.setRefreshText("下拉刷新");
+            mHeaderView.onRecoverPre();
         }
     }
 
@@ -485,12 +474,11 @@ public class SuperEasyRefreshLayout extends ViewGroup {
             ensureTarget();
             mRefreshing = refreshing;
             if (mRefreshing) {
-                mRefreshView.setRefreshText("正在刷新...");
-                mRefreshView.showProgressBar();
+                mHeaderView.onRefreshing(mRefreshing);
                 int endTarget = mRefreshOffset - Math.abs(mOriginalOffsetTop);
                 animateOffsetFromToTarget(mCurrentTargetOffsetTop,endTarget, mRefreshListener);
             } else {
-                mRefreshView.hideProgressBar();
+                mHeaderView.onRefreshing(mRefreshing);
                 animateOffsetFromToTarget(mCurrentTargetOffsetTop,mOriginalOffsetTop, null);
             }
         }
@@ -540,26 +528,26 @@ public class SuperEasyRefreshLayout extends ViewGroup {
             if (listener != null) {
                 animateFromToTarget.setAnimationListener(listener);
             }
-            mRefreshView.clearAnimation();
-            mRefreshView.startAnimation(animateFromToTarget);
+            mHeaderView.clearAnimation();
+            mHeaderView.startAnimation(animateFromToTarget);
     }
 
     /**
      * 移动到初始位置
      * */
     void moveToStart() {
-        int offset = mOriginalOffsetTop - mRefreshView.getTop();
+        int offset = mOriginalOffsetTop - mHeaderView.getTop();
         setTargetOffsetTopAndBottom(offset);
     }
 
     /**
-     * 移动某个view，移动的距离。此时移动的是mRefreshView，由于此时改变了mCurrentTargetOffsetTop的值，
+     * 移动某个view，移动的距离。此时移动的是mHeaderView，由于此时改变了mCurrentTargetOffsetTop的值，
      * 而且onMeasure方法和onLayout方法会执行，所以其他view也会移动
      * */
     void setTargetOffsetTopAndBottom(int offset) {
-        mRefreshView.bringToFront();
-        ViewCompat.offsetTopAndBottom(mRefreshView, offset);
-        mCurrentTargetOffsetTop = mRefreshView.getTop();
+        mHeaderView.bringToFront();
+        ViewCompat.offsetTopAndBottom(mHeaderView, offset);
+        mCurrentTargetOffsetTop = mHeaderView.getTop();
     }
 
     /**
@@ -578,7 +566,7 @@ public class SuperEasyRefreshLayout extends ViewGroup {
         public void applyTransformation(float interpolatedTime, Transformation t) {
             int targetTop = 0;
             targetTop = (mFromPosition + (int) ((mTargetPosition - mFromPosition) * interpolatedTime));
-            int offset = targetTop - mRefreshView.getTop();
+            int offset = targetTop - mHeaderView.getTop();
             setTargetOffsetTopAndBottom(offset);
         }
     }
@@ -609,5 +597,40 @@ public class SuperEasyRefreshLayout extends ViewGroup {
      */
     public void setOnLoadMoreListener(OnLoadMoreListener loadMoreListener){
         mLoadMoreListener = loadMoreListener;
+    }
+
+
+    public void showLoadingView() {
+
+    }
+
+    public void hideLoadingView() {
+
+    }
+
+    public void showErrorPage() {
+
+    }
+
+    public void setHeaderView(HeaderView headerView) {
+        if (headerView == null) {
+            return;
+        }
+        mHeaderView = headerView;
+        addView(mHeaderView);
+        mHeaderViewHeight = mHeaderView.headViewHeight;
+        mRefreshOffset = (int) (mHeaderViewHeight * 1.5f);
+        mOriginalOffsetTop = mCurrentTargetOffsetTop = -mHeaderViewHeight;
+        moveToStart();
+
+    }
+
+    public void setFooterView(FooterView footerView) {
+        if (footerView == null) {
+            return;
+        }
+        mFooterView = footerView;
+        addView(mFooterView);
+        mFootViewHeight = mFooterView.footerViewHeight;
     }
 }

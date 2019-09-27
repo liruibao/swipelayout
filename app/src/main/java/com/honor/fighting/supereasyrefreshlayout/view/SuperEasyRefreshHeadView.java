@@ -30,13 +30,13 @@ import com.honor.fighting.supereasyrefreshlayout.R;
  *
  * 下拉刷新的头部view，这个view可以任意修改样式
  */
-public class SuperEasyRefreshHeadView extends LinearLayout {
+public class SuperEasyRefreshHeadView extends HeaderView {
 
     private ProgressBar progressBar;
     public int headViewHeight;
     public  TextView textView;
 
-    SuperEasyRefreshHeadView(Context context) {
+    public SuperEasyRefreshHeadView(Context context) {
         super(context);
         View view = View.inflate(getContext(), R.layout.view_super_easy_refresh_head, null);
         textView = (TextView) view.findViewById(R.id.super_easy_refresh_text_view);
@@ -74,4 +74,35 @@ public class SuperEasyRefreshHeadView extends LinearLayout {
     }
 
 
+    @Override
+    public void onShow() {
+
+    }
+
+    @Override
+    public void onRecoverPre() {
+         setRefreshText("下拉刷新");
+    }
+
+    @Override
+    public void onAlert() {
+        setRefreshText("松开刷新");
+    }
+
+    @Override
+    public void onRefreshing(boolean isRefreshing) {
+        if (isRefreshing) {
+             setRefreshText("正在刷新...");
+             showProgressBar();
+        }else {
+            hideProgressBar();
+        }
+
+    }
+
+    @Override
+    public void onHide() {
+        setRefreshText("下拉刷新");
+        hideProgressBar();
+    }
 }

@@ -29,12 +29,12 @@ import com.honor.fighting.supereasyrefreshlayout.R;
  *
  * 加载更多的view，这个view的样式可以任意修改。
  */
-public class SuperEasyRefreshFootView extends LinearLayout {
+public class SuperEasyRefreshFootView extends FooterView {
 
     public int footViewHeight;
     public  TextView textView;
 
-    SuperEasyRefreshFootView(Context context) {
+    public SuperEasyRefreshFootView(Context context) {
         super(context);
         View view = View.inflate(getContext(), R.layout.view_super_easy_refresh_foot, null);
         textView = (TextView) view.findViewById(R.id.super_easy_refresh_text_view);
@@ -47,4 +47,29 @@ public class SuperEasyRefreshFootView extends LinearLayout {
         super.onMeasure(widthMeasureSpec,MeasureSpec.makeMeasureSpec(footViewHeight, MeasureSpec.EXACTLY));
     }
 
+    @Override
+    public void onShow() {
+
+    }
+
+    @Override
+    public void onRecoverPre() {
+
+    }
+
+    @Override
+    public void onAlert() {
+
+    }
+
+    @Override
+    public void onRefreshing(boolean isRefreshing) {
+
+    }
+
+    @Override
+    public void onHide() {
+
+
+    }
 }
